@@ -3,9 +3,9 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import DonorDashboard from "./pages/donor/DonorDashboard";
+import CreateListing from "./pages/donor/CreateListing";
 
-// Placeholder dashboards (we'll build these next)
-const DonorDashboard = () => <div className="p-8 text-2xl font-bold text-green-700">Donor Dashboard 🍱</div>;
 const CharityDashboard = () => <div className="p-8 text-2xl font-bold text-blue-700">Charity Dashboard 🤝</div>;
 const AdminDashboard = () => <div className="p-8 text-2xl font-bold text-purple-700">Admin Dashboard ⚙️</div>;
 const Unauthorized = () => <div className="p-8 text-2xl font-bold text-red-600">Unauthorized Access</div>;
@@ -23,6 +23,11 @@ function App() {
           <Route path="/donor/dashboard" element={
             <ProtectedRoute roles={["donor"]}>
               <DonorDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/donor/create-listing" element={
+            <ProtectedRoute roles={["donor"]}>
+              <CreateListing />
             </ProtectedRoute>
           } />
           <Route path="/charity/dashboard" element={

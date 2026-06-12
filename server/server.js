@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import './config/db.js';
 import authRoutes from './routes/authRoutes.js';
+import listingRoutes from './routes/listingRoutes.js';
+import './utils/cronJobs.js';
 
 dotenv.config();
 
@@ -13,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/listings', listingRoutes);
 
 app.get('/', (req, res) => {
     res.send('Smart Food Waste API is running');
