@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import BrowseListings from "./BrowseListings";
-import NotificationBell from "../../components/NotificationBell";
+
 
 const CharityDashboard = () => {
-  const { user, token, logout } = useAuth();
-  const navigate = useNavigate();
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState("browse");
   const [claims, setClaims] = useState([]);
   const [loadingClaims, setLoadingClaims] = useState(true);
@@ -34,11 +32,6 @@ const CharityDashboard = () => {
     if (activeTab === "my-claims") fetchClaims();
   }, [activeTab, fetchClaims]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
   const statusColor = {
     pending: "bg-yellow-100 text-yellow-700",
     approved: "bg-green-100 text-green-700",
@@ -48,22 +41,6 @@ const CharityDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">
-            {user?.organization_name || user?.full_name}
-          </span>
-          <NotificationBell />
-          <button
-            onClick={handleLogout}
-            className="text-sm text-red-500 hover:text-red-700 font-medium"
-          >
-            Logout
-          </button>
-        </div>
-      </nav>
-
       {/* Tabs */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 flex gap-6">

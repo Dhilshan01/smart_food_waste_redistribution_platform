@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
-import NotificationBell from "../../components/NotificationBell";
+
 
 const AdminDashboard = () => {
-  const { user, token, logout } = useAuth();
-  const navigate = useNavigate();
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -108,11 +106,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
   const tabs = [
     { key: "overview", label: "Overview" },
     { key: "users", label: "Users" },
@@ -135,22 +128,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">
-            {user?.organization_name || user?.full_name}
-          </span>
-          <NotificationBell />
-          <button
-            onClick={handleLogout}
-            className="text-sm text-red-500 hover:text-red-700 font-medium"
-          >
-            Logout
-          </button>
-        </div>
-      </nav>
-
       {/* Tabs */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 flex gap-6">

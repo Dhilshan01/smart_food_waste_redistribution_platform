@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import ListingCard from "../../components/ListingCard";
-import NotificationBell from "../../components/NotificationBell";
+
 
 const DonorDashboard = () => {
-  const { user, token, logout } = useAuth();
-  const navigate = useNavigate();
+  const { token } = useAuth();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -28,7 +27,7 @@ const DonorDashboard = () => {
       setListings(res.data);
       setStats({
         total: res.data.length,
-        available: res.data.filter((l) => l.status === "available").length,
+        available: res.data.filter((l) => (l.status || "available") === "available").length,
         claimed: res.data.filter((l) => l.status === "claimed").length,
         expired: res.data.filter((l) => l.status === "expired").length,
       });
@@ -56,29 +55,8 @@ const DonorDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">
-            {user?.organization_name || user?.full_name}
-          </span>
-          <NotificationBell />
-          <button
-            onClick={handleLogout}
-            className="text-sm text-red-500 hover:text-red-700 font-medium"
-          >
-            Logout
-          </button>
-        </div>
-      </nav>
-
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
