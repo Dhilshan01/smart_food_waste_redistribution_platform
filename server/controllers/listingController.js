@@ -3,104 +3,117 @@ import { calculateSafetyScore } from "../utils/foodSafetyScore.js";
 import { notifyCharitiesUrgent } from "../utils/notificationHelper.js";
 
 export const createListing = async (req, res) => {
-  const {
-    title,
-    description,
-    quantity,
-    food_category,
-    prepared_at,
-    expires_at,
-    pickup_address,
-    city,
-  } = req.body;
-  const donor_id = req.user.id;
+    const { 
+        title, description, quantity, food_category, prepared_at, expires_at, 
+        pickup_address, city, listing_type, unit_price, storage_conditions,
+        latitude, longitude
+    } = req.body;
+    const donor_id = req.user.id;
 
-  try {
-    const { score, hoursRemaining } = calculateSafetyScore(
-      prepared_at,
-      expires_at,
-    );
+    try {
+        const safety = calculateSafetyScore(prepared_at, expires_at, storage_conditions);
 
-    const newListing = await pool.query(
-      `INSERT INTO food_listings 
-            (donor_id, title, description, quantity, food_category, prepared_at, expires_at, pickup_address, city, safety_score, status)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
-      [
-        donor_id,
-        title,
-        description,
-        quantity,
-        food_category,
-        prepared_at,
-        expires_at,
-        pickup_address,
-        city,
-        score,
-        "available",
-      ],
-    );
+        const newListing = await pool.query(
+            `INSERT INTO food_listings 
+            (donor_id, title, description, quantity, food_category, prepared_at, expires_at, 
+             pickup_address, city, safety_score, listing_type, unit_price, storage_conditions,
+             safety_score_numeric, latitude, longitude)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+            [donor_id, title, description, quantity, food_category, prepared_at, expires_at, 
+             pickup_address, city, safety.score, listing_type || 'donation', 
+             listing_type === 'sale' ? unit_price : 0, storage_conditions || 'room_temperature',
+             safety.numericScore, latitude || null, longitude || null]
+        );
 
-    // Log safety score
-    await pool.query(
-      `INSERT INTO food_safety_logs (listing_id, safety_score, hours_remaining)
+        await pool.query(
+            `INSERT INTO food_safety_logs (listing_id, safety_score, hours_remaining)
              VALUES ($1, $2, $3)`,
-      [newListing.rows[0].id, score, hoursRemaining],
-    );
+            [newListing.rows[0].id, safety.score, safety.hoursRemaining]
+        );
 
-    // Notify charities if food is urgent.
-    if (score === "moderate_risk" || score === "unsafe") {
-      await notifyCharitiesUrgent({
-        id: newListing.rows[0].id,
-        title,
-        city,
-      });
+        if (safety.score === 'moderate_risk' || safety.score === 'unsafe') {
+            await notifyCharitiesUrgent({
+                title, city, id: newListing.rows[0].id
+            });
+        }
+
+        res.status(201).json({
+            message: 'Listing created successfully',
+            listing: { ...newListing.rows[0], safety_details: safety }
+        });
+
+    } catch (error) {
+        console.error('Create listing error:', error);
+        res.status(500).json({ message: 'Server error' });
     }
-
-    res.status(201).json({
-      message: "Listing created successfully",
-      listing: newListing.rows[0],
-    });
-  } catch (error) {
-    console.error("Create listing error:", error);
-    res.status(500).json({ message: "Server error" });
-  }
 };
 
+// CHARITY VIEW — donations only
 export const getAvailableListings = async (req, res) => {
-  try {
-    const { city } = req.query;
-
-    let query = `
+    try {
+        const { city } = req.query;
+        let query = `
             SELECT fl.*, u.full_name as donor_name, u.organization_name, u.phone
             FROM food_listings fl
             JOIN users u ON fl.donor_id = u.id
-            WHERE COALESCE(fl.status, 'available') = 'available' AND fl.expires_at > NOW()
+            WHERE fl.status = 'available' AND fl.expires_at > NOW() AND fl.listing_type = 'donation'
         `;
-    const params = [];
+        const params = [];
+        if (city) {
+            params.push(city);
+            query += ` AND fl.city ILIKE $${params.length}`;
+        }
+        query += ` ORDER BY fl.expires_at ASC`;
 
-    if (city) {
-      params.push(city);
-      query += ` AND fl.city ILIKE $${params.length}`;
+        const listings = await pool.query(query, params);
+        const listingsWithScore = listings.rows.map(listing => {
+            const safety = calculateSafetyScore(listing.prepared_at, listing.expires_at, listing.storage_conditions);
+            return { ...listing, live_safety: safety };
+        });
+        res.status(200).json(listingsWithScore);
+    } catch (error) {
+        console.error('Get listings error:', error);
+        res.status(500).json({ message: 'Server error' });
     }
+};
 
-    query += ` ORDER BY fl.expires_at ASC`;
+// BUSINESS MARKETPLACE VIEW — sale listings only
+export const getMarketplaceListings = async (req, res) => {
+    try {
+        const { city, category, maxPrice } = req.query;
+        let query = `
+            SELECT fl.*, u.full_name as donor_name, u.organization_name, u.phone
+            FROM food_listings fl
+            JOIN users u ON fl.donor_id = u.id
+            WHERE fl.status = 'available' AND fl.expires_at > NOW() AND fl.listing_type = 'sale'
+              AND fl.donor_id != $1
+        `;
+        const params = [req.user.id];
 
-    const listings = await pool.query(query, params);
+        if (city) {
+            params.push(city);
+            query += ` AND fl.city ILIKE $${params.length}`;
+        }
+        if (category) {
+            params.push(category);
+            query += ` AND fl.food_category = $${params.length}`;
+        }
+        if (maxPrice) {
+            params.push(maxPrice);
+            query += ` AND fl.unit_price <= $${params.length}`;
+        }
+        query += ` ORDER BY fl.expires_at ASC`;
 
-    // Attach live safety score to each listing
-    const listingsWithScore = listings.rows.map((listing) => {
-      const safety = calculateSafetyScore(
-        listing.prepared_at,
-        listing.expires_at,
-      );
-      return { ...listing, live_safety: safety };
-    });
-
-    res.status(200).json(listingsWithScore);
-  } catch (error) {
-    console.error("Get listings error:", error);
-    res.status(500).json({ message: "Server error" });
-  }
+        const listings = await pool.query(query, params);
+        const listingsWithScore = listings.rows.map(listing => {
+            const safety = calculateSafetyScore(listing.prepared_at, listing.expires_at, listing.storage_conditions);
+            return { ...listing, live_safety: safety };
+        });
+        res.status(200).json(listingsWithScore);
+    } catch (error) {
+        console.error('Get marketplace error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 };
 
 export const getMyListings = async (req, res) => {

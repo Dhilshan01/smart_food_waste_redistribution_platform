@@ -8,6 +8,8 @@ import './utils/cronJobs.js';
 import claimRoutes from './routes/claimRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import transactionRoutes from './routes/transactionRoutes.js';
+
 
 
 dotenv.config();
@@ -24,6 +26,7 @@ app.use('/api/listings', listingRoutes);
 app.use('/api/claims', claimRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 app.get('/', (req, res) => {
     res.send('Smart Food Waste API is running');
