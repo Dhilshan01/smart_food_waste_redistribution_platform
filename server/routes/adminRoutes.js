@@ -3,6 +3,7 @@ import {
     getStats,
     getAllUsers,
     toggleUserStatus,
+    deleteUser,
     getAllListings,
     deleteAnyListing,
     getAllClaims
@@ -17,6 +18,7 @@ router.use(protect, authorizeRoles('admin'));
 router.get('/stats', getStats);
 router.get('/users', getAllUsers);
 router.patch('/users/:id/toggle', toggleUserStatus);
+router.delete('/users/:id', deleteUser);
 router.get('/listings', getAllListings);
 router.delete('/listings/:id', deleteAnyListing);
 router.get('/claims', getAllClaims);

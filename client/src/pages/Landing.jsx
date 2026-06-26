@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 
 const metrics = [
-  { value: "3", label: "Role-based workspaces" },
-  { value: "Live", label: "Food safety scoring" },
-  { value: "24/7", label: "Expiry monitoring" },
-  { value: "B2B", label: "Sales and donation flows" },
+  { value: "3", label: "Role-based workspaces", delay: "animate-delay-100" },
+  { value: "Live", label: "Food safety scoring", delay: "animate-delay-200" },
+  { value: "24/7", label: "Expiry monitoring", delay: "animate-delay-300" },
+  { value: "B2B", label: "Sales and donation flows", delay: "animate-delay-400" },
 ];
 
 const roles = [
@@ -89,44 +89,62 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-white text-slate-950">
       <section className="relative overflow-hidden border-b border-slate-200 bg-slate-950">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(#ffffff_1px,transparent_1px),linear-gradient(90deg,#ffffff_1px,transparent_1px)] [background-size:44px_44px]" />
         <div className="mx-auto grid min-h-[calc(100vh-65px)] max-w-7xl items-center gap-10 px-4 py-16 lg:grid-cols-[1fr_420px]">
-          <div className="max-w-3xl">
+          <div className="relative max-w-3xl">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
               Smart surplus food management platform
             </p>
-            <h1 className="mt-5 text-5xl font-black tracking-tight text-white sm:text-6xl">
+            <h1 className="animate-fade-up mt-5 text-5xl font-black tracking-tight text-white sm:text-6xl">
               FoodFlow
             </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-slate-200">
+            <p className="animate-fade-up animate-delay-100 mt-5 max-w-2xl text-lg leading-relaxed text-slate-200">
               A web platform that helps businesses redistribute surplus food through B2B sales,
               charity donations, expiry tracking, food safety scoring, and waste analytics.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="animate-fade-up animate-delay-200 mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/register"
-                className="inline-flex justify-center rounded-lg bg-emerald-500 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-400"
+                className="interactive-lift inline-flex justify-center rounded-lg bg-emerald-500 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-400"
               >
                 Create account
               </Link>
               <Link
                 to="/login"
-                className="inline-flex justify-center rounded-lg border border-white/25 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur transition hover:bg-white/20"
+                className="interactive-lift inline-flex justify-center rounded-lg border border-white/25 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur transition hover:bg-white/20"
               >
                 Sign in
               </Link>
             </div>
           </div>
 
-          <div className="rounded-lg border border-white/15 bg-white p-5 shadow-2xl">
-            <p className="text-sm font-black text-slate-950">What the system does</p>
+          <div className="animate-fade-up animate-delay-300 animate-soft-float relative rounded-lg border border-white/15 bg-white p-5 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <p className="text-sm font-black text-slate-950">System activity</p>
+              <span className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">
+                <span className="animate-status-pulse h-2 w-2 rounded-full bg-emerald-500" />
+                Live
+              </span>
+            </div>
             <div className="mt-4 space-y-3">
               {[
                 "Connects food donors, business buyers, charities, and admins.",
                 "Scores each listing before redistribution.",
                 "Tracks sales, donations, collected food, and expired food.",
                 "Supports analytics for waste reduction decisions.",
-              ].map((item) => (
-                <div key={item} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              ].map((item, index) => (
+                <div
+                  key={item}
+                  className={`animate-fade-up rounded-lg border border-slate-200 bg-slate-50 p-3 ${
+                    index === 0
+                      ? "animate-delay-100"
+                      : index === 1
+                        ? "animate-delay-200"
+                        : index === 2
+                          ? "animate-delay-300"
+                          : "animate-delay-400"
+                  }`}
+                >
                   <p className="text-sm leading-relaxed text-slate-700">{item}</p>
                 </div>
               ))}
@@ -138,7 +156,10 @@ const Landing = () => {
       <section className="border-b border-slate-200 bg-white px-4 py-8">
         <div className="mx-auto grid max-w-7xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {metrics.map((metric) => (
-            <div key={metric.label} className="rounded-lg border border-slate-200 p-5">
+            <div
+              key={metric.label}
+              className={`interactive-lift animate-fade-up ${metric.delay} rounded-lg border border-slate-200 p-5`}
+            >
               <p className="text-3xl font-black text-slate-950">{metric.value}</p>
               <p className="mt-1 text-sm font-semibold text-slate-500">{metric.label}</p>
             </div>
@@ -157,7 +178,7 @@ const Landing = () => {
 
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {roles.map((role) => (
-              <article key={role.title} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <article key={role.title} className="interactive-lift rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 className="text-base font-black text-slate-950">{role.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-slate-600">{role.description}</p>
                 <ul className="mt-5 space-y-2">
@@ -190,8 +211,14 @@ const Landing = () => {
 
             <div className="grid gap-3">
               {workflow.map((item) => (
-                <article key={item.step} className="grid gap-4 rounded-lg border border-slate-200 p-5 sm:grid-cols-[70px_1fr]">
-                  <span className="text-2xl font-black text-emerald-700">{item.step}</span>
+                <article
+                  key={item.step}
+                  className="interactive-lift grid gap-4 rounded-lg border border-slate-200 p-5 sm:grid-cols-[70px_1fr]"
+                >
+                  <span className="relative text-2xl font-black text-emerald-700">
+                    {item.step}
+                    <span className="animate-status-pulse absolute -right-2 top-1 h-2 w-2 rounded-full bg-emerald-500" />
+                  </span>
                   <div>
                     <h3 className="text-sm font-black text-slate-950">{item.title}</h3>
                     <p className="mt-1 text-sm leading-relaxed text-slate-600">{item.description}</p>
@@ -212,7 +239,7 @@ const Landing = () => {
             </h2>
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {modules.map((module) => (
-                <div key={module} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <div key={module} className="interactive-lift rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                   <span className="block h-1.5 w-8 rounded-full bg-emerald-600" />
                   <p className="mt-4 text-sm font-bold leading-relaxed text-slate-800">{module}</p>
                 </div>
@@ -231,7 +258,7 @@ const Landing = () => {
             </p>
             <div className="mt-6 space-y-3">
               {safetyLevels.map((level) => (
-                <div key={level.label} className={`rounded-lg border p-4 ${level.className}`}>
+                <div key={level.label} className={`interactive-lift rounded-lg border p-4 ${level.className}`}>
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-black">{level.label}</p>
                     <p className="text-xs font-black">{level.range}</p>

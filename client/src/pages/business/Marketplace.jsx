@@ -88,7 +88,7 @@ const Marketplace = () => {
           {[
             { label: "Listings", value: listings.length },
             { label: "Safe", value: totals.safe },
-            { label: "Value", value: `$${totals.value.toFixed(0)}` },
+            { label: "Value", value: `Rs ${totals.value.toFixed(0)}` },
           ].map((item) => (
             <div key={item.label} className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
               <p className="text-xs font-semibold text-slate-500">{item.label}</p>
@@ -215,7 +215,7 @@ const Marketplace = () => {
                         <div>
                           <p className="text-xs font-semibold text-slate-500">Total price</p>
                           <p className="mt-1 text-2xl font-black text-emerald-700">
-                            ${Number(listing.unit_price || 0).toFixed(2)}
+                            Rs {Number(listing.unit_price || 0).toFixed(2)}
                           </p>
                         </div>
                         <button

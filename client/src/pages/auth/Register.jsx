@@ -38,7 +38,10 @@ const Register = () => {
       else navigate("/admin/dashboard");
 
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      setError(
+        err.response?.data?.message ||
+          (err.request ? "Cannot reach the server. Check that the backend is running on port 5000." : "Registration failed"),
+      );
     } finally {
       setLoading(false);
     }

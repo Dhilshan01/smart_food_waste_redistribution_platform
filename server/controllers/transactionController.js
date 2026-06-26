@@ -39,7 +39,7 @@ export const createTransaction = async (req, res) => {
         await createNotification(
             listing.rows[0].donor_id,
             '💰 New Purchase Request',
-            `Your listing "${listing.rows[0].title}" has been purchased for $${total_amount}.`,
+            `Your listing "${listing.rows[0].title}" has been purchased for Rs ${total_amount}.`,
             'claimed'
         );
 

@@ -399,7 +399,7 @@ const CreateListing = () => {
                 <p>{formData.city || "City pending"}</p>
                 <p>{formData.pickup_address || "Pickup address pending"}</p>
                 {formData.listing_type === "sale" && (
-                  <p className="font-black text-emerald-700">${Number(formData.unit_price || 0).toFixed(2)}</p>
+                  <p className="font-black text-emerald-700">Rs {Number(formData.unit_price || 0).toFixed(2)}</p>
                 )}
               </div>
             </div>

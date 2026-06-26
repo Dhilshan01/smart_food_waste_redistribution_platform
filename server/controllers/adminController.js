@@ -82,6 +82,81 @@ export const toggleUserStatus = async (req, res) => {
     }
 };
 
+// DELETE USER AND RELATED PLATFORM DATA
+export const deleteUser = async (req, res) => {
+    const userId = req.params.id;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const user = await client.query(
+            `SELECT id, role FROM users WHERE id = $1`,
+            [userId]
+        );
+
+        if (user.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.rows[0].role === 'admin') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'Admin users cannot be deleted here' });
+        }
+
+        await client.query(`DELETE FROM notifications WHERE user_id = $1`, [userId]);
+
+        await client.query(
+            `DELETE FROM claims
+             WHERE charity_id = $1
+                OR listing_id IN (SELECT id FROM food_listings WHERE donor_id = $1)`,
+            [userId]
+        );
+
+        await client.query(
+            `DELETE FROM transactions
+             WHERE buyer_id = $1
+                OR seller_id = $1
+                OR listing_id IN (SELECT id FROM food_listings WHERE donor_id = $1)`,
+            [userId]
+        );
+
+        await client.query(
+            `DELETE FROM waste_analytics
+             WHERE business_id = $1
+                OR listing_id IN (SELECT id FROM food_listings WHERE donor_id = $1)`,
+            [userId]
+        );
+
+        await client.query(
+            `DELETE FROM food_safety_logs
+             WHERE listing_id IN (SELECT id FROM food_listings WHERE donor_id = $1)`,
+            [userId]
+        );
+
+        await client.query(`DELETE FROM food_listings WHERE donor_id = $1`, [userId]);
+
+        const deleted = await client.query(
+            `DELETE FROM users WHERE id = $1 AND role != 'admin' RETURNING id, full_name, email`,
+            [userId]
+        );
+
+        await client.query('COMMIT');
+
+        res.status(200).json({
+            message: 'User deleted successfully',
+            user: deleted.rows[0],
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Delete user error:', error);
+        res.status(500).json({ message: 'Server error' });
+    } finally {
+        client.release();
+    }
+};
+
 // GET ALL LISTINGS
 export const getAllListings = async (req, res) => {
     try {

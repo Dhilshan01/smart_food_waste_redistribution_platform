@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-const currency = (value) => `$${Number(value || 0).toFixed(2)}`;
+const currency = (value) => `Rs ${Number(value || 0).toFixed(2)}`;
 
 const AnalyticsDashboard = () => {
   const { token } = useAuth();

@@ -94,6 +94,21 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteUser = async (user) => {
+    const name = user.organization_name || user.full_name || user.email;
+    if (!window.confirm(`Delete ${name}? This will also remove related listings, claims, transactions, and notifications.`)) return;
+
+    try {
+      await axios.delete(`http://localhost:5000/api/admin/users/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchUsers();
+      fetchStats();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to delete user");
+    }
+  };
+
   const handleDeleteListing = async (id) => {
     if (!window.confirm("Delete this listing?")) return;
     try {
@@ -315,7 +330,7 @@ const AdminDashboard = () => {
                       "Organization",
                       "City",
                       "Status",
-                      "Action",
+                      "Actions",
                     ].map((h) => (
                       <th
                         key={h}
@@ -362,6 +377,7 @@ const AdminDashboard = () => {
                         </span>
                       </td>
                       <td className="px-5 py-4">
+                        <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => handleToggleUser(u.id)}
                           className={`text-xs font-medium px-3 py-1.5 rounded-lg transition ${
@@ -372,6 +388,13 @@ const AdminDashboard = () => {
                         >
                           {u.is_active ? "Deactivate" : "Activate"}
                         </button>
+                        <button
+                          onClick={() => handleDeleteUser(u)}
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition"
+                        >
+                          Delete
+                        </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -6,7 +6,7 @@ import ListingCard from "../../components/ListingCard";
 import Marketplace from "../business/Marketplace";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 
-const currency = (value) => `$${Number(value || 0).toFixed(2)}`;
+const currency = (value) => `Rs ${Number(value || 0).toFixed(2)}`;
 
 const tabs = [
   { key: "my-listings", label: "Listings" },
