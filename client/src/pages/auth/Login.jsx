@@ -99,6 +99,10 @@ const Login = () => {
               Register free
             </Link>
           </p>
+          <div className="mt-6 rounded-xl bg-gray-50 p-4 text-sm">
+            <p className="font-semibold text-gray-700">Demo accounts</p>
+            <p className="mt-2 text-xs text-gray-500">Ask the system administrator for the donor, charity, and admin demo credentials.</p>
+          </div>
         </div>
       </div>
     </div>

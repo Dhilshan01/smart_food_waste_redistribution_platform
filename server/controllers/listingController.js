@@ -1,6 +1,7 @@
 import pool from "../config/db.js";
 import { calculateSafetyScore } from "../utils/foodSafetyScore.js";
 import { notifyCharitiesUrgent } from "../utils/notificationHelper.js";
+import { calculateMatchScore } from "../utils/matchingEngine.js";
 
 export const createListing = async (req, res) => {
     const { 
@@ -26,9 +27,9 @@ export const createListing = async (req, res) => {
         );
 
         await pool.query(
-            `INSERT INTO food_safety_logs (listing_id, safety_score, hours_remaining)
-             VALUES ($1, $2, $3)`,
-            [newListing.rows[0].id, safety.score, safety.hoursRemaining]
+            `INSERT INTO food_safety_logs (listing_id, safety_score, safety_score_numeric, hours_remaining)
+             VALUES ($1, $2, $3, $4)`,
+            [newListing.rows[0].id, safety.score, safety.numericScore, safety.hoursRemaining]
         );
 
         if (safety.score === 'moderate_risk' || safety.score === 'unsafe') {
@@ -75,6 +76,53 @@ export const getAvailableListings = async (req, res) => {
         console.error('Get listings error:', error);
         res.status(500).json({ message: 'Server error' });
     }
+};
+
+export const getMatchedListings = async (req, res) => {
+  try {
+    const [charityResult, preferenceResult, listingsResult] = await Promise.all([
+      pool.query(`SELECT id, city FROM users WHERE id = $1`, [req.user.id]),
+      pool.query(
+        `SELECT fl.food_category, COUNT(*)::int AS claim_count
+         FROM claims c JOIN food_listings fl ON fl.id = c.listing_id
+         WHERE c.charity_id = $1
+         GROUP BY fl.food_category ORDER BY claim_count DESC`,
+        [req.user.id],
+      ),
+      pool.query(
+        `SELECT fl.*, u.full_name AS donor_name, u.organization_name, u.phone
+         FROM food_listings fl JOIN users u ON u.id = fl.donor_id
+         WHERE fl.status = 'available' AND fl.expires_at > NOW()
+           AND fl.listing_type = 'donation'`,
+      ),
+    ]);
+
+    const charity = charityResult.rows[0];
+    const preferences = preferenceResult.rows.map((row) => row.food_category);
+    const matched = listingsResult.rows
+      .map((listing) => {
+        const liveSafety = calculateSafetyScore(
+          listing.prepared_at,
+          listing.expires_at,
+          listing.storage_conditions,
+        );
+        return {
+          ...listing,
+          live_safety: liveSafety,
+          ...calculateMatchScore(
+            { ...listing, live_safety: liveSafety },
+            charity,
+            preferences,
+          ),
+        };
+      })
+      .sort((a, b) => b.match_score - a.match_score);
+
+    res.status(200).json(matched);
+  } catch (error) {
+    console.error("Get matched listings error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
 // BUSINESS MARKETPLACE VIEW — sale listings only

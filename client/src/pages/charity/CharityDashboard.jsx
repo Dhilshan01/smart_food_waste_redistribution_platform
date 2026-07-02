@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 import BrowseListings from "./BrowseListings";
+import MatchedListings from "./MatchedListings";
 
 
 const CharityDashboard = () => {
@@ -46,6 +47,7 @@ const CharityDashboard = () => {
         <div className="max-w-6xl mx-auto px-4 flex gap-6">
           {[
             { key: "browse", label: "Browse Food" },
+            { key: "matched", label: "Matched For You" },
             { key: "my-claims", label: "My Claims" },
           ].map((tab) => (
             <button
@@ -65,10 +67,30 @@ const CharityDashboard = () => {
 
       {/* Content */}
       {activeTab === "browse" && <BrowseListings />}
+      {activeTab === "matched" && <MatchedListings />}
 
       {activeTab === "my-claims" && (
         <div className="max-w-6xl mx-auto px-4 py-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6">My Claims</h2>
+          {!loadingClaims && (
+            <div className="mb-6 grid grid-cols-3 gap-3">
+              {[
+                ["Total", claims.length],
+                ["Pending", claims.filter((claim) => claim.status !== "collected").length],
+                ["Collected", claims.filter((claim) => claim.status === "collected").length],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border bg-white p-4">
+                  <p className="text-xs text-gray-500">{label}</p>
+                  <p className="text-2xl font-bold">{value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {claims.some((claim) => claim.status === "collected") && (
+            <div className="mb-6 rounded-xl bg-green-50 p-4 text-sm font-semibold text-green-800">
+              Your collections are creating measurable community impact.
+            </div>
+          )}
           {loadingClaims ? (
             <div className="text-center text-gray-400 py-20">Loading...</div>
           ) : claims.length === 0 ? (
@@ -108,6 +130,21 @@ const CharityDashboard = () => {
                         claim.status.slice(1)}
                     </span>
                   </div>
+                  {claim.status !== "collected" && (
+                    <button
+                      onClick={async () => {
+                        await axios.patch(
+                          `/api/claims/${claim.id}/collect`,
+                          {},
+                          { headers: { Authorization: `Bearer ${token}` } },
+                        );
+                        fetchClaims();
+                      }}
+                      className="mt-4 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white"
+                    >
+                      Mark Collected
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

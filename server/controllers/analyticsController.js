@@ -12,7 +12,9 @@ export const getBusinessAnalytics = async (req, res) => {
             donationSummary,
             categoryBreakdown,
             monthlyListings,
-            recentOutcomes
+            recentOutcomes,
+            outcomeSummary,
+            monthlyRevenue
         ] = await Promise.all([
             pool.query(
                 `SELECT
@@ -76,6 +78,23 @@ export const getBusinessAnalytics = async (req, res) => {
                  ORDER BY created_at DESC
                  LIMIT 8`,
                 [businessId]
+            ),
+            pool.query(
+                `SELECT COUNT(*) FILTER (WHERE outcome = 'sold')::int AS sold,
+                        COUNT(*) FILTER (WHERE outcome = 'donated')::int AS donated,
+                        COUNT(*) FILTER (WHERE outcome = 'wasted')::int AS wasted,
+                        COALESCE(SUM(estimated_value) FILTER (WHERE outcome IN ('sold', 'donated')), 0)::numeric AS cost_savings
+                 FROM waste_analytics WHERE business_id = $1`,
+                [businessId]
+            ),
+            pool.query(
+                `SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'Mon YYYY') AS month,
+                        COALESCE(SUM(total_amount), 0)::numeric AS revenue
+                 FROM transactions WHERE seller_id = $1
+                   AND created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '5 months'
+                 GROUP BY DATE_TRUNC('month', created_at)
+                 ORDER BY DATE_TRUNC('month', created_at)`,
+                [businessId]
             )
         ]);
 
@@ -106,9 +125,14 @@ export const getBusinessAnalytics = async (req, res) => {
                 avoidedWaste,
                 wasteRate,
                 utilizationRate
+                ,sold: parseNumber(outcomeSummary.rows[0]?.sold)
+                ,donated: parseNumber(outcomeSummary.rows[0]?.donated)
+                ,wasted: parseNumber(outcomeSummary.rows[0]?.wasted)
+                ,costSavings: parseNumber(outcomeSummary.rows[0]?.cost_savings)
             },
             categoryBreakdown: categoryBreakdown.rows,
             monthlyListings: monthlyListings.rows.reverse(),
+            monthlyRevenue: monthlyRevenue.rows,
             recentOutcomes: recentOutcomes.rows
         });
     } catch (error) {

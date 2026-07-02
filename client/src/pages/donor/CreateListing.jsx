@@ -257,7 +257,7 @@ const CreateListing = () => {
               <div>
                 <label className="mb-2 block text-xs font-bold text-slate-600">Food category</label>
                 <div className="grid gap-2 sm:grid-cols-3">
-                  {categories.map((category) => (
+                  {categories.map((category, index) => (
                     <button
                       key={category}
                       type="button"
@@ -268,6 +268,7 @@ const CreateListing = () => {
                           : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                       }`}
                     >
+                      <span className="mr-2" aria-hidden="true">{["🍲", "🥖", "🍎", "🥛", "🥤", "📦", "🍽️"][index]}</span>
                       {category}
                     </button>
                   ))}
@@ -408,7 +409,9 @@ const CreateListing = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className={`w-full rounded-lg px-4 py-3 text-sm font-black text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              formData.listing_type === "sale" ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700"
+            }`}
           >
             {loading ? "Publishing..." : formData.listing_type === "sale" ? "Publish sale listing" : "Publish donation"}
           </button>

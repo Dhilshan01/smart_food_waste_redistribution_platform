@@ -6,7 +6,8 @@ import {
     deleteUser,
     getAllListings,
     deleteAnyListing,
-    getAllClaims
+    getAllClaims,
+    getPlatformAnalytics
 } from '../controllers/adminController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -22,5 +23,6 @@ router.delete('/users/:id', deleteUser);
 router.get('/listings', getAllListings);
 router.delete('/listings/:id', deleteAnyListing);
 router.get('/claims', getAllClaims);
+router.get('/analytics', getPlatformAnalytics);
 
 export default router;

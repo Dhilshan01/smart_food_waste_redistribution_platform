@@ -1,6 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const currency = (value) => `Rs ${Number(value || 0).toFixed(2)}`;
 
@@ -53,9 +68,11 @@ const AnalyticsDashboard = () => {
   const { summary } = analytics;
   const metricCards = [
     { label: "Food Listed", value: summary.totalListed, tone: "text-gray-900" },
+    { label: "Sold", value: summary.sold, tone: "text-emerald-600" },
+    { label: "Donated", value: summary.donated, tone: "text-blue-600" },
     { label: "Recovered Revenue", value: currency(summary.recoveredRevenue), tone: "text-green-600" },
-    { label: "Waste Avoided", value: summary.avoidedWaste, tone: "text-blue-600" },
-    { label: "Expired", value: summary.expired, tone: "text-red-500" },
+    { label: "Wasted", value: summary.wasted, tone: "text-red-500" },
+    { label: "Cost Savings", value: currency(summary.costSavings), tone: "text-violet-600" },
   ];
 
   return (
@@ -67,13 +84,59 @@ const AnalyticsDashboard = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         {metricCards.map((metric) => (
           <div key={metric.label} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <p className="text-xs text-gray-400">{metric.label}</p>
             <p className={`text-2xl font-bold mt-1 ${metric.tone}`}>{metric.value}</p>
           </div>
         ))}
+      </div>
+
+      <div className={`inline-flex rounded-full px-4 py-2 text-sm font-bold ${
+        summary.wasteRate <= 10 ? "bg-green-100 text-green-800" : summary.wasteRate <= 30 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"
+      }`}>
+        Sustainability score: {Math.max(0, 100 - summary.wasteRate)}/100
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="h-80 rounded-2xl border bg-white p-5">
+          <h3 className="mb-4 font-semibold">Monthly Waste Trend</h3>
+          <ResponsiveContainer width="100%" height="85%">
+            <LineChart data={analytics.monthlyListings}>
+              <CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="month" /><YAxis allowDecimals={false} />
+              <Tooltip /><Legend /><Line type="monotone" dataKey="expired" stroke="#ef4444" name="Wasted" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="h-80 rounded-2xl border bg-white p-5">
+          <h3 className="mb-4 font-semibold">Outcome Breakdown</h3>
+          <ResponsiveContainer width="100%" height="85%">
+            <PieChart><Pie data={[
+              { name: "Sold", value: summary.sold },
+              { name: "Donated", value: summary.donated },
+              { name: "Wasted", value: summary.wasted },
+            ]} dataKey="value" innerRadius={55} outerRadius={90} label>
+              {["#10b981", "#3b82f6", "#ef4444"].map((color) => <Cell key={color} fill={color} />)}
+            </Pie><Tooltip /><Legend /></PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="h-80 rounded-2xl border bg-white p-5">
+          <h3 className="mb-4 font-semibold">Food Categories</h3>
+          <ResponsiveContainer width="100%" height="85%">
+            <BarChart data={analytics.categoryBreakdown}><CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="category" /><YAxis allowDecimals={false} /><Tooltip /><Bar dataKey="expired" fill="#f97316" name="Wasted" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="h-80 rounded-2xl border bg-white p-5">
+          <h3 className="mb-4 font-semibold">Monthly Revenue</h3>
+          <ResponsiveContainer width="100%" height="85%">
+            <BarChart data={analytics.monthlyRevenue}><CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" /><YAxis /><Tooltip /><Bar dataKey="revenue" fill="#059669" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

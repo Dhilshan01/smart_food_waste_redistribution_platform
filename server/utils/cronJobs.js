@@ -9,8 +9,15 @@ cron.schedule('*/15 * * * *', async () => {
             `UPDATE food_listings 
              SET status = 'expired' 
              WHERE expires_at < NOW() AND status = 'available'
-             RETURNING id`
+             RETURNING id, donor_id, unit_price`
         );
+        for (const listing of expired.rows) {
+            await pool.query(
+                `INSERT INTO waste_analytics (business_id, listing_id, outcome, estimated_value)
+                 VALUES ($1, $2, 'wasted', $3)`,
+                [listing.donor_id, listing.id, Number(listing.unit_price || 0)]
+            );
+        }
         if (expired.rows.length > 0) {
             console.log(`Auto-expired ${expired.rows.length} listing(s)`);
         }

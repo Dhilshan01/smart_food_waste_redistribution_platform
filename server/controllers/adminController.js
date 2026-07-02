@@ -209,3 +209,65 @@ export const getAllClaims = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+export const getPlatformAnalytics = async (req, res) => {
+    try {
+        const [totals, monthly, donors, charities, averageSafety, averageMatch] = await Promise.all([
+            pool.query(
+                `SELECT
+                    COUNT(*) FILTER (WHERE outcome = 'sold')::int AS sold,
+                    COUNT(*) FILTER (WHERE outcome = 'donated')::int AS donated,
+                    COUNT(*) FILTER (WHERE outcome = 'wasted')::int AS wasted,
+                    COALESCE(SUM(estimated_value) FILTER (WHERE outcome = 'sold'), 0)::numeric AS recovered_value
+                 FROM waste_analytics`
+            ),
+            pool.query(
+                `SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'Mon YYYY') AS month,
+                        COUNT(*) FILTER (WHERE outcome = 'sold')::int AS sold,
+                        COUNT(*) FILTER (WHERE outcome = 'donated')::int AS donated,
+                        COUNT(*) FILTER (WHERE outcome = 'wasted')::int AS wasted
+                 FROM waste_analytics
+                 WHERE created_at >= DATE_TRUNC('month', NOW()) - INTERVAL '5 months'
+                 GROUP BY DATE_TRUNC('month', created_at)
+                 ORDER BY DATE_TRUNC('month', created_at)`
+            ),
+            pool.query(
+                `SELECT u.id, COALESCE(u.organization_name, u.full_name) AS name,
+                        COUNT(fl.id)::int AS listings
+                 FROM users u LEFT JOIN food_listings fl ON fl.donor_id = u.id
+                 WHERE u.role = 'donor'
+                 GROUP BY u.id ORDER BY listings DESC LIMIT 5`
+            ),
+            pool.query(
+                `SELECT u.id, COALESCE(u.organization_name, u.full_name) AS name,
+                        COUNT(c.id)::int AS claims
+                 FROM users u LEFT JOIN claims c ON c.charity_id = u.id
+                 WHERE u.role = 'charity'
+                 GROUP BY u.id ORDER BY claims DESC LIMIT 5`
+            ),
+            pool.query(`SELECT COALESCE(ROUND(AVG(safety_score_numeric)), 0)::int AS score FROM food_listings`),
+            pool.query(
+                `SELECT COALESCE(ROUND(AVG(
+                    (CASE WHEN LOWER(fl.city) = LOWER(u.city) THEN 100 ELSE 30 END) * .30 +
+                    COALESCE(fl.safety_score_numeric, 0) * .25 +
+                    GREATEST(0, LEAST(100, 100 - EXTRACT(EPOCH FROM (fl.expires_at - NOW())) / 1800)) * .25 +
+                    30 * .20
+                 )), 0)::int AS score
+                 FROM food_listings fl CROSS JOIN users u
+                 WHERE fl.listing_type = 'donation' AND u.role = 'charity'`
+            ),
+        ]);
+
+        res.status(200).json({
+            totals: totals.rows[0],
+            monthly: monthly.rows,
+            topDonors: donors.rows,
+            topCharities: charities.rows,
+            averageSafetyScore: averageSafety.rows[0].score,
+            averageMatchScore: averageMatch.rows[0].score,
+        });
+    } catch (error) {
+        console.error('Get platform analytics error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};

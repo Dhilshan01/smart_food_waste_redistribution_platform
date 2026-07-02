@@ -10,6 +10,7 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [listings, setListings] = useState([]);
   const [claims, setClaims] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchStats = useCallback(async () => {
@@ -67,6 +68,20 @@ const AdminDashboard = () => {
     }
   }, [token]);
 
+  const fetchAnalytics = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("/api/admin/analytics", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAnalytics(res.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchStats();
@@ -77,7 +92,8 @@ const AdminDashboard = () => {
     if (activeTab === "users") fetchUsers();
     if (activeTab === "listings") fetchListings();
     if (activeTab === "claims") fetchClaims();
-  }, [activeTab, fetchUsers, fetchListings, fetchClaims]);
+    if (activeTab === "analytics") fetchAnalytics();
+  }, [activeTab, fetchUsers, fetchListings, fetchClaims, fetchAnalytics]);
 
   const handleToggleUser = async (id) => {
     try {
@@ -126,6 +142,7 @@ const AdminDashboard = () => {
     { key: "users", label: "Users" },
     { key: "listings", label: "Listings" },
     { key: "claims", label: "Claims" },
+    { key: "analytics", label: "Analytics" },
   ];
 
   const statusColor = {
@@ -163,6 +180,50 @@ const AdminDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {activeTab === "analytics" && loading && <div className="py-20 text-center text-gray-400">Loading analytics...</div>}
+        {activeTab === "analytics" && analytics && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold">Platform Analytics</h2>
+              <p className="text-sm text-gray-500">Platform-wide redistribution and matching performance.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+              {[
+                ["Sold", analytics.totals.sold],
+                ["Donated", analytics.totals.donated],
+                ["Wasted", analytics.totals.wasted],
+                ["Recovered", `Rs ${analytics.totals.recovered_value}`],
+                ["Avg safety", `${analytics.averageSafetyScore}/100`],
+                ["Avg match", `${analytics.averageMatchScore}%`],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border bg-white p-4">
+                  <p className="text-xs text-gray-500">{label}</p>
+                  <p className="mt-1 text-xl font-bold">{value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-xl border bg-white p-5">
+              <h3 className="font-bold">Monthly trend</h3>
+              <div className="mt-4 grid gap-2">
+                {analytics.monthly.map((month) => (
+                  <div key={month.month} className="grid grid-cols-4 rounded-lg bg-gray-50 p-3 text-sm">
+                    <b>{month.month}</b><span>Sold {month.sold}</span><span>Donated {month.donated}</span><span>Wasted {month.wasted}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              {[["Top Donors", analytics.topDonors, "listings"], ["Top Charities", analytics.topCharities, "claims"]].map(([title, rows, metric]) => (
+                <div key={title} className="rounded-xl border bg-white p-5">
+                  <h3 className="font-bold">{title}</h3>
+                  <table className="mt-3 w-full text-sm"><tbody>
+                    {rows.map((row) => <tr key={row.id} className="border-t"><td className="py-3">{row.name}</td><td className="text-right font-bold">{row[metric]}</td></tr>)}
+                  </tbody></table>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
         {/* OVERVIEW TAB */}
         {activeTab === "overview" && loading && (
           <div className="text-center text-gray-400 py-20">Loading...</div>

@@ -97,11 +97,20 @@ export const markCollected = async (req, res) => {
     );
 
     const listingData = await pool.query(
-      `SELECT title, donor_id FROM food_listings WHERE id = $1`,
+      `SELECT title, donor_id, unit_price FROM food_listings WHERE id = $1`,
       [claim.rows[0].listing_id],
     );
 
     if (listingData.rows.length > 0) {
+      await pool.query(
+        `INSERT INTO waste_analytics (business_id, listing_id, outcome, estimated_value)
+         VALUES ($1, $2, 'donated', $3)`,
+        [
+          listingData.rows[0].donor_id,
+          claim.rows[0].listing_id,
+          Number(listingData.rows[0].unit_price || 0),
+        ],
+      );
       await createNotification(
         listingData.rows[0].donor_id,
         "Food Successfully Collected",

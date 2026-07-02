@@ -1,10 +1,9 @@
 import { Link } from "react-router-dom";
 
 const metrics = [
-  { value: "3", label: "Role-based workspaces", delay: "animate-delay-100" },
-  { value: "Live", label: "Food safety scoring", delay: "animate-delay-200" },
-  { value: "24/7", label: "Expiry monitoring", delay: "animate-delay-300" },
-  { value: "B2B", label: "Sales and donation flows", delay: "animate-delay-400" },
+  { value: "1 in 3", label: "Meals produced globally are wasted", delay: "animate-delay-100" },
+  { value: "820M+", label: "People face hunger worldwide", delay: "animate-delay-200" },
+  { value: "Real-time", label: "Safety and expiry monitoring", delay: "animate-delay-300" },
 ];
 
 const roles = [
@@ -46,11 +45,6 @@ const workflow = [
     title: "Redistribute",
     description: "Businesses purchase sale listings, while charities claim donation listings before collection.",
   },
-  {
-    step: "05",
-    title: "Analyze outcomes",
-    description: "Dashboards show recovered revenue, donated food, expired listings, and waste reduction trends.",
-  },
 ];
 
 const modules = [
@@ -60,8 +54,6 @@ const modules = [
   "Charity donation claim workflow",
   "Food safety scoring and expiry warnings",
   "Waste analytics and sustainability reporting",
-  "Notifications for claims, purchases, and urgent expiry",
-  "Admin monitoring for users, listings, and claims",
 ];
 
 const safetyLevels = [
@@ -298,6 +290,16 @@ const Landing = () => {
           </div>
         </div>
       </section>
+      <footer className="border-t border-slate-800 bg-slate-950 px-4 py-8 text-slate-300">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-bold">FoodFlow · Smart food redistribution</p>
+          <nav className="flex gap-5 text-sm">
+            <Link to="/">Home</Link>
+            <Link to="/register">Register</Link>
+            <Link to="/login">Sign in</Link>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 };

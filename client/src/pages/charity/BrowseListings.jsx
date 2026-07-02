@@ -9,6 +9,9 @@ const BrowseListings = () => {
   const [loading, setLoading] = useState(true);
   const [cityFilter, setCityFilter] = useState("");
   const [safetyFilter, setSafetyFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [claimingId, setClaimingId] = useState(null);
+  const [successId, setSuccessId] = useState(null);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -33,25 +36,34 @@ const BrowseListings = () => {
     fetchListings();
   }, [fetchListings]);
 
-  const filteredListings = safetyFilter
-    ? listings.filter((l) => l.live_safety?.score === safetyFilter)
-    : listings;
+  const categories = [...new Set(listings.map((listing) => listing.food_category).filter(Boolean))];
+  const filteredListings = listings.filter(
+    (listing) =>
+      (!safetyFilter || listing.live_safety?.score === safetyFilter) &&
+      (!categoryFilter || listing.food_category === categoryFilter),
+  );
 
   const urgentCount = listings.filter(
     (l) => l.live_safety?.score === "moderate_risk",
   ).length;
 
   const handleClaim = async (listingId) => {
+    setClaimingId(listingId);
     try {
       await axios.post(
         "http://localhost:5000/api/claims",
         { listing_id: listingId },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      alert("Food claimed successfully!");
-      fetchListings();
+      setSuccessId(listingId);
+      setTimeout(() => {
+        setListings((current) => current.filter((listing) => listing.id !== listingId));
+        setSuccessId(null);
+      }, 700);
     } catch (err) {
       alert(err.response?.data?.message || "Failed to claim");
+    } finally {
+      setClaimingId(null);
     }
   };
 
@@ -95,11 +107,17 @@ const BrowseListings = () => {
             <option value="moderate_risk">⚠️ Moderate Risk</option>
             <option value="unsafe">❌ Unsafe</option>
           </select>
-          {(cityFilter || safetyFilter) && (
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
+            className="border border-gray-200 rounded-lg px-4 py-2 text-sm">
+            <option value="">All Categories</option>
+            {categories.map((category) => <option key={category}>{category}</option>)}
+          </select>
+          {(cityFilter || safetyFilter || categoryFilter) && (
             <button
               onClick={() => {
                 setCityFilter("");
                 setSafetyFilter("");
+                setCategoryFilter("");
               }}
               className="text-sm text-red-500 hover:text-red-700 font-medium px-3"
             >
@@ -121,6 +139,10 @@ const BrowseListings = () => {
                 expiring soon — collect before they expire
               </p>
             </div>
+            <button onClick={() => setSafetyFilter("moderate_risk")}
+              className="ml-auto rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white">
+              View Urgent
+            </button>
           </div>
         )}
 
@@ -139,12 +161,11 @@ const BrowseListings = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredListings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                showActions={true}
-                onClaim={handleClaim}
-              />
+              <div key={listing.id} className="relative">
+                <ListingCard listing={listing} showActions={true} onClaim={handleClaim} />
+                {claimingId === listing.id && <div className="absolute inset-0 grid place-items-center rounded-lg bg-white/80 font-bold">Claiming...</div>}
+                {successId === listing.id && <div className="absolute inset-0 grid place-items-center rounded-lg bg-green-600/90 font-bold text-white">Claimed successfully</div>}
+              </div>
             ))}
           </div>
         )}
